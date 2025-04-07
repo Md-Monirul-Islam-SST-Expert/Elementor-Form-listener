@@ -1,0 +1,35 @@
+<script>
+  window.dataLayer = window.dataLayer || [];
+  var origin_open = XMLHttpRequest.prototype.open;
+  var origin_send = XMLHttpRequest.prototype.send;
+  var form_data = "";
+
+  XMLHttpRequest.prototype.send = function(body) {
+    form_data = Object.fromEntries(body);
+    origin_send.apply(this, arguments);
+  };
+
+  XMLHttpRequest.prototype.open = function(method, url) {
+    if(url.includes("admin-ajax.php")) {
+        this.addEventListener('loadend', function(event) {
+            var parameter_filter = ['form_id', 'form_fields'];
+            if(JSON.parse(event.currentTarget.response).success) {
+                for (key in form_data) {
+                    if(!parameter_filter.some(function(prefix) { return key.startsWith(prefix) })) delete form_data[key];
+                    if(!form_data[key]) delete form_data[key];
+                }
+                dataLayer.push({
+                    event: "generate_lead",
+                    form_data: form_data
+                });
+            }
+        });
+        origin_open.apply(this, arguments);
+    }
+  };
+  /*
+  * v0.1.0
+  * Created by Data Marketing School at http://www.data-marketing-school.com
+  * Written by https://www.linkedin.com/in/lucasrollin/
+  */
+</script>
